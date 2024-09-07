@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aprovação de Anúncios - EcoBusque</title>
+    <link rel="stylesheet" href="./css/anuncio.css">
+    <style>
+        /* Adicione estilos básicos para o conteúdo aqui */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #333;
+            color: #fff;
+            padding: 10px 0;
+            text-align: center;
+        }
+        h1 {
+            margin: 0;
+        }
+        section {
+            background-color: #fff;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .ad {
+            border-bottom: 1px solid #ddd;
+            padding: 15px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .ad:last-child {
+            border-bottom: none;
+        }
+        .ad h3 {
+            margin: 0;
+            font-size: 1.2em;
+        }
+        .ad p {
+            margin: 0;
+            color: #555;
+        }
+        .ad a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .ad a:hover {
+            text-decoration: underline;
+        }
+        .ad .clicks {
+            font-size: 0.9em;
+            color: #888;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .popup {
+            display: none;
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            text-align: center;
+        }
+        .popup button {
+            background-color: #007bff;
+            border: none;
+            padding: 10px 20px;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .popup button:hover {
+            background-color: #0056b3;
+        }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Aprovação de Anúncios</h1>
+        </header>
+        <main>
+            <section>
+                <h2>Anúncios Pendentes de Aprovação</h2>
+                <div id="pendingAds"></div>
+            </section>
+            <section>
+                <h2>Anúncios Aprovados</h2>
+                <div id="approvedAds"></div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        async function loadPendingAds() {
+            try {
+                const response = await fetch('https://backendeco.azurewebsites.net/ads/pending');
+                const ads = await response.json();
+                
+                const pendingAdsContainer = document.getElementById('pendingAds');
+                pendingAdsContainer.innerHTML = ads.length > 0 
+                    ? ads.map(ad => 
+                        `<div class="ad">
+                            <h3>${ad.titulo}</h3>
+                            <p>${ad.descricao}</p>
+                            <p class="clicks">Cliques: ${ad.cliques || 0}</p>
+                            <button onclick="approveAd(${ad.id})">Aprovar</button>
+                        </div>`
+                    ).join('')
+                    : '<p>Nenhum anúncio pendente encontrado.</p>';
+            } catch (error) {
+                console.error('Erro ao carregar anúncios pendentes:', error);
+            }
+        }
+
+        async function loadApprovedAds() {
+            try {
+                const response = await fetch('https://backendeco.azurewebsites.net/ads/results');
+                const ads = await response.json();
+                
+                const approvedAdsContainer = document.getElementById('approvedAds');
+                approvedAdsContainer.innerHTML = ads.length > 0 
+                    ? ads.map(ad => 
+                        `<div class="ad">
+                            <h3>${ad.titulo}</h3>
+                            <p>${ad.descricao}</p>
+                            <p class="clicks">Cliques: ${ad.cliques || 0}</p>
+                        </div>`
+                    ).join('')
+                    : '<p>Nenhum anúncio aprovado encontrado.</p>';
+            } catch (error) {
+                console.error('Erro ao carregar anúncios aprovados:', error);
+            }
+        }
+
+        async function approveAd(id) {
+            try {
+                const response = await fetch(`https://backendeco.azurewebsites.net/ads/${id}/approve`, {
+                    method: 'PUT'
+                });
+
+                if (response.ok) {
+                    alert('Anúncio aprovado!');
+                    loadPendingAds();
+                    loadApprovedAds();
+                } else {
+                    alert('Erro ao aprovar o anúncio');
+                }
+            } catch (error) {
+                console.error('Erro ao aprovar o anúncio:', error);
+            }
+        }
+
+        function openPopup() {
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('popup').style.display = 'block';
+        }
+
+        function closePopup() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('popup').style.display = 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPendingAds();
+            loadApprovedAds();
+        });
+    </script>
+</body>
+</html>
